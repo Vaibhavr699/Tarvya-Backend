@@ -4,7 +4,9 @@ const sendMailHandler = require('./api/sendMail');
 const cors = require('cors');
 require('dotenv').config();
 
-app.use(cors());
+app.use(cors({
+    origin: 'https://www.tarvyainfra.com'
+}));
 app.use(express.json());
 
 app.get('/', (req, res) => {
