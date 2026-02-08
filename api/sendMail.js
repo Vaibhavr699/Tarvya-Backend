@@ -13,20 +13,7 @@ module.exports = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Please fill in all required fields (Name, Email, Message).' });
         }
 
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
-
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: process.env.EMAIL_USER,
-            replyTo: email,
-            subject: `New Contact Form Submission - ${subject || 'General Inquiry'} | ${name}`,
-            html: `
+        const htmlContent = `
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -113,10 +100,47 @@ module.exports = async (req, res) => {
         </div>
     </body>
     </html>
-    `
+    `;
+
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+            throw new Error('SMTP credentials missing');
+        }
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: process.env.EMAIL_USER,
+            replyTo: email,
+            subject: `New Contact Form Submission - ${subject || 'General Inquiry'} | ${name}`,
+            html: htmlContent
         };
 
-        await transporter.sendMail(mailOptions);
+        const sendViaGmail = async (port, secure) => {
+            const transporter = nodemailer.createTransport({
+                host: 'smtp.gmail.com',
+                port,
+                secure,
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS
+                },
+                connectionTimeout: 15000,
+                greetingTimeout: 15000,
+                socketTimeout: 20000,
+                requireTLS: !secure,
+                tls: { minVersion: 'TLSv1.2' }
+            });
+            return transporter.sendMail(mailOptions);
+        };
+
+        try {
+            await sendViaGmail(465, true);
+        } catch (err) {
+            if (err && (err.code === 'ETIMEDOUT' || err.command === 'CONN')) {
+                await sendViaGmail(587, false);
+            } else {
+                throw err;
+            }
+        }
 
         return res.status(200).json({ success: true, message: 'Enquiry sent successfully!' });
 
