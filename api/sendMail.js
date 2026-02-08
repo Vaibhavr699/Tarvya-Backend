@@ -1,30 +1,7 @@
 const nodemailer = require('nodemailer');
-const cors = require('cors');
 require('dotenv').config();
 
-const corsHandler = cors({
-    methods: ['POST', 'OPTIONS'],
-    origin: '*',
-});
-
-function runMiddleware(req, res, fn) {
-    return new Promise((resolve, reject) => {
-        fn(req, res, (result) => {
-            if (result instanceof Error) {
-                return reject(result);
-            }
-            return resolve(result);
-        });
-    });
-}
-
 module.exports = async (req, res) => {
-    await runMiddleware(req, res, corsHandler);
-
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }

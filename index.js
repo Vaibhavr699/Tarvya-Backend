@@ -5,7 +5,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 app.use(cors({
-    origin: 'https://www.tarvyainfra.com'
+    origin: '*'
 }));
 app.use(express.json());
 
