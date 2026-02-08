@@ -146,6 +146,16 @@ module.exports = async (req, res) => {
 
     } catch (error) {
         console.error('Error sending email:', error);
-        return res.status(500).json({ success: false, message: 'Failed to send enquiry.', error: error.message });
+        const payload = {
+            success: false,
+            message: 'Failed to send enquiry.',
+            error: error && error.message ? error.message : 'Unknown error'
+        };
+        if (error && (error.code || error.command)) {
+            payload.smtp = {};
+            if (error.code) payload.smtp.code = error.code;
+            if (error.command) payload.smtp.command = error.command;
+        }
+        return res.status(500).json(payload);
     }
 };
